@@ -26,26 +26,26 @@ options(encoding = "UTF-8")
 ```{r read, include = TRUE, message = FALSE}
 
 # Environment Module
-env00 <- read_dta(here::here("Vi Le - Master Thesis","ZA3440_Envi2000.dta"))
-env10 <- read_dta(here::here("Vi Le - Master Thesis","ZA5500_Envi2010.dta"))
+env00 <- read_dta(here::here("ZA3440_Envi2000.dta"))
+env10 <- read_dta(here::here("ZA5500_Envi2010.dta"))
 
 # CHES
-ches10 <- read.csv(here::here("Vi Le - Master Thesis","2010_CHES_dataset_means.csv", na.strings = ""))
-ches14 <- read.csv(here::here("Vi Le - Master Thesis","2014_CHES_dataset_means.csv", na.strings = ""))
-seat1 <- read.xlsx(here::here("Vi Le - Master Thesis","Percentage-of-seats-in-parliaments.xlsx",na.strings="", sheet=1))
-seat2 <- read.xlsx(here::here("Vi Le - Master Thesis","Percentage-of-seats-in-parliaments.xlsx",na.strings="", sheet=2))
+ches10 <- read.csv(here::here("2010_CHES_dataset_means.csv"), na.strings = "")
+ches14 <- read.csv(here::here("2014_CHES_dataset_means.csv" ), na.strings = "")
+seat1 <- read.xlsx(here::here("parlseat.xlsx"),na.strings="", sheet=1)
+seat2 <- read.xlsx(here::here("parlseat.xlsx"),na.strings="", sheet=2)
 
 # Government spending 
-gspend <- read.csv(here::here("Vi Le - Master Thesis","gov_10a_exp_1_Data.csv"))
+gspend <- read.csv(here::here("gov_10a_exp_1_Data.csv"))
 
 # CO2 Emission
-co2 <- read.table(file = here::here("Vi Le - Master Thesis","estat_t2020_rd300.tsv", sep = '\t', header = TRUE)) 
+co2 <- read.table(file = here::here("estat_t2020_rd300.tsv"), sep = '\t', header = TRUE) 
 
 # Environment tax
-gtax <- read.csv(here::here("Vi Le - Master Thesis","env_ac_tax_1_Data.csv"))
+gtax <- read.csv(here::here("env_ac_tax_1_Data.csv"))
 
 # GDP per Capita
-gdp <- read.csv(here::here("Vi Le - Master Thesis","nama_10_pc_1_Data.csv"))
+gdp <- read.csv(here::here("nama_10_pc_1_Data.csv"))
 
 ```
 

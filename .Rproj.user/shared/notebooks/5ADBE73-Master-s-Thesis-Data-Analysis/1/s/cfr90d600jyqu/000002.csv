@@ -1,0 +1,199 @@
+"0","```r
+# Summarise the Environment dataset - Table 1 
+
+
+library(sjmisc)
+descr(env,show = c(\"n\", \"mean\", \"sd\", \"range\", \"skew\"),out = \"browser\")
+descr(df,show = c(\"n\", \"mean\", \"sd\", \"range\", \"skew\"),out = \"browser\")
+
+# Plot mean opinion by country - Figure 1
+env_mean2 <- env_mean
+env_mean2$cntry <- as.factor(env_mean$cntry)
+env_mean2$cname <- countrycode(env_mean2$cntry, origin = \"iso3n\", destination = \"country.name\")
+
+agg_png(\"Fig1.png\", width = 1200, height = 700, res = 144)
+ggplot(data = env_mean2, aes(x = year, y = tradeoff, color = cname)) +
+  geom_point(size = 2,)+
+  geom_line() + 
+  labs(title = \"Willingness to sacrifice for environment protection by country\", color = \"Country\") +
+  ylab(label = \"Mean Willingness\") +
+  xlab(label = \"Year\") +
+  scale_x_continuous(breaks = c(2000,2010)) +
+  theme(plot.title = element_text(size = 15,face = \"bold\"))
+invisible(dev.off())
+
+# Party
+party[,-c(1:4)] <- round(party[,-c(1:4)],2)
+party$cname <- countrycode(party$cntry, origin = \"iso3n\", destination = \"country.name\")
+
+party2 <- party[,c(9,2,4,6:8)]
+colnames(party2) <- c(\"Country\", \"Year\", \"Party name\", \"Attitude\", \"Percentage Seat\", \"Gov Position\")
+party2 %>% gt()
+
+# Plot mean position by country - Figure 2
+
+govpos2 <- govpos
+govpos2$govpos <- round(govpos2$govpos,2)
+govpos2$cname <- countrycode(govpos2$cntry, origin = \"iso3n\", destination = \"country.name\")
+govpos2 <- govpos2[,c(5,2,4)]
+colnames(govpos2) <- c(\"Country\", \"Year\", \"Goverment position\")
+descr(govpos2$`Goverment position`, show = c(\"n\", \"mean\", \"sd\", \"range\", \"skew\"),out = \"browser\" )
+
+
+
+govpos$cntry <- as.factor(govpos$cntry)
+govpos$cname <- countrycode(govpos$cntry, origin = \"iso3n\", destination = \"country.name\")
+
+agg_png(filename = \"Fig2.png\", width = 1200, height = 700, res =144,)
+ggplot(data = govpos, aes(x = year, y = govpos, color = cname)) +
+  geom_point(size = 2)+
+  geom_line() + 
+  labs(title = \"Party positions by country\", color = \"Country\") +
+  ylab(label = \"Mean Party Position\") +
+  xlab(label = \"Year\") +
+  theme(plot.title = element_text(size = 15,face = \"bold\"))
+
+invisible(dev.off())
+
+# Spending 
+gspend$spend <- as.numeric(gspend$spend)
+descr(gspend, show = c(\"n\", \"mean\", \"sd\", \"range\", \"skew\"),out = \"browser\")
+gspend$cname <- countrycode(gspend$cntry, origin = \"iso3n\", destination = \"country.name\")
+gspend2 <- gspend[,c(5,2,3)]
+
+
+agg_png(filename = \"Fig3.png\", width = 1200, height = 700, res =144,)
+ggplot(data = gspend2, aes(x = year, y = spend, color = cname)) +
+  geom_point(size = 2)+
+  geom_line() + 
+  labs(title = \"Government Spending on environment protection by country\", color = \"Country\") +
+  ylab(label = \"As Percentage of Total Spending\") +
+  xlab(label = \"Year\") +
+  theme(plot.title = element_text(size = 15,face = \"bold\"))
+
+invisible(dev.off())
+
+
+# Tax revenue
+
+gtax$taxrev <- as.numeric(gtax$taxrev)
+descr(gtax, show = c(\"n\", \"mean\", \"sd\", \"range\", \"skew\"),out = \"browser\")
+gtax$cname <- countrycode(gtax$cntry, origin = \"iso3n\", destination = \"country.name\")
+gtax2 <- gtax[,c(5,2,3)]
+
+agg_png(filename = \"Fig4.png\", width = 1200, height = 700, res =144,)
+ggplot(data = gtax2, aes(x = year, y = taxrev, color = cname)) +
+  geom_point(size = 2)+
+  geom_line() + 
+  labs(title = \"Government Environment Tax Revenue by country\", color = \"Country\") +
+  ylab(label = \"As Percentage of Total Revenue\") +
+  xlab(label = \"Year\") +
+  theme(plot.title = element_text(size = 15,face = \"bold\"))
+
+invisible(dev.off())
+
+# Measurement model
+
+
+mod1 <- '
+  # cfa
+  pubop =~ price + tax + cut
+'
+
+fit1 <- cfa(mod1, data = env)
+
+mod1coef <-parameterEstimates(fit1, standardized=TRUE)[,c(1:2,5:9,12)] %>% filter(op == \"=~\")
+
+mod1coef[,1] <- \"Willingness to trade\"
+mod1coef[,2] <- c(\"Price\", \"Tax\", \"Cut\")
+mod1coef[,-c(1:2)] <- round(mod1coef[,-c(1,2)],3)
+colnames(mod1coef) <- c(\"Latent\", \"Observed Variables\", \"SE\", \"Z\", \"P-Value\", \"CI.Lower\", \"CI.Upper\", \"Standardized Factor Loadings\")
+
+library(gt)
+mod1coef %>% gt()
+
+mod1var <- parameterEstimates(fit1, standardized=TRUE)[,c(1:2,5:9,12)] %>% filter(op == \"~~\")
+mod1var <- mod1var[-4,-2]
+mod1var[,-1] <- round(mod1var[,-1],3)
+
+colnames(mod1var) <- c(\"Variable\", \"SE\", \"Z\", \"P-Value\", \"CI.Lower\", \"CI.Upper\", \"Standardized Error Variance\")
+mod1var$r2 <- round(inspect(fit1, what = \"r2\"),3)
+
+mod1var %>% gt()
+
+mod1fit <- data.frame(
+  CFI = fitmeasures(fit1, \"cfi\"),
+  TLI = fitmeasures(fit1, \"tli\"),
+  RMSEA = fitmeasures(fit1, \"RMSEA\"),
+  AIC = round(fitmeasures(fit1, \"AIC\"),0),
+  BIC = round(fitmeasures(fit1, \"BIC\"),0),
+  Chisquared = round(fitmeasures(fit1, \"chisq\"),3)
+)
+
+mod1fit %>% gt()
+
+
+# Configural invariance across time and space
+
+
+configural <- cfa (mod1, data = env, group = \"cntry\", estimator = \"ML\")
+
+summary (configural, fit.measures = TRUE, standardized = TRUE, rsq = TRUE)
+
+config1fit <- data.frame(
+  CFI = fitmeasures(configural, \"cfi\"),
+  TLI = fitmeasures(configural, \"tli\"),
+  RMSEA = fitmeasures(configural, \"RMSEA\"),
+  AIC = round(fitmeasures(configural, \"AIC\"),0),
+  BIC = round(fitmeasures(configural, \"BIC\"),0),
+  Chisquared = round(fitmeasures(configural, \"chisq\"),3)
+)
+weak <- cfa (mod1, data = env, group = \"cntry\",
+group.equal = \"loadings\", estimator = \"ML\")
+
+strong <- cfa (mod1, data = env, group = \"cntry\",
+group.equal = c(\"loadings\", \"intercepts\"), estimator = \"ML\")
+
+strict <- cfa (mod1, data = env, group = \"cntry\",
+group.equal = c(\"loadings\", \"intercepts\",\"residuals\"), estimator = \"ML\")
+
+meaIn1 <- anova(configural,weak,strong,strict)
+
+
+
+configural2 <- cfa (mod1, data = env, group = \"year\", estimator = \"ML\")
+
+summary (configural2, fit.measures = TRUE, standardized = TRUE, rsq = TRUE)
+
+config2fit <- data.frame(
+  CFI = fitmeasures(configural2, \"cfi\"),
+  TLI = fitmeasures(configural2, \"tli\"),
+  RMSEA = fitmeasures(configural2, \"RMSEA\"),
+  AIC = round(fitmeasures(configural2, \"AIC\"),0),
+  BIC = round(fitmeasures(configural2, \"BIC\"),0),
+  Chisquared = round(fitmeasures(configural2, \"chisq\"),3)
+)
+weak2 <- cfa (mod1, data = env, group = \"year\",
+group.equal = \"loadings\", estimator = \"ML\")
+
+strong2 <- cfa (mod1, data = env, group = \"year\",
+group.equal = c(\"loadings\", \"intercepts\"), estimator = \"ML\")
+
+strict2 <- cfa (mod1, data = env, group = \"year\",
+group.equal = c(\"loadings\", \"intercepts\",\"residuals\"), estimator = \"ML\")
+
+meaIn2 <- anova(configural2,weak2,strong2,strict2)
+
+config1fit %>% gt()
+meaIn1 <- round(meaIn1,3)
+
+meaIn1 %>% gt(rowname_col = TRUE)
+
+config2fit %>% gt()
+
+meaIn2 <- round(meaIn2,3)
+
+meaIn2 %>% gt()
+
+
+```"

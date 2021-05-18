@@ -1,0 +1,150 @@
+"0","```r
+# Whether government positions predicts spending
+
+model3 <- \"
+  # regression
+  spend ~ govpos + cntry + wave 
+\"
+m3 <- sem(model3, df)
+
+summary(m3, fit.measures = TRUE, rsquare = TRUE)
+
+
+model3.2 <- \"
+  # regression
+  spend ~ govpos + cntry + wave + co2 
+\"
+m3.2 <- sem(model3.2, df)
+
+summary(m3.2, fit.measures = TRUE, rsquare = TRUE)
+
+
+model3.3 <- \"
+  # regression
+  spend ~ govpos + cntry + wave + gdp
+\"
+m3.3 <- sem(model3.3, df)
+
+summary(m3.3, fit.measures = TRUE, rsquare = TRUE)
+
+
+model3.4 <- \"
+  # regression
+  spend ~ govpos + cntry + wave + co2 + gdp
+\"
+m3.4 <- sem(model3.4, df)
+
+summary(m3.4, fit.measures = TRUE, rsquare = TRUE)
+
+
+tabmod3 <- data.frame(
+  matrix(nrow = 10, ncol = 4),
+  row.names = c(\"Government Position\", \"Country\", \"Year\",\"CO2\", \"GDP\", \"Observations\",\"R-squared\", \"AIC\", \"BIC\", \"log-likelihood\")
+)
+colnames(tabmod3) <- c(\"M1\", \"M2\", \"M3\", \"M4\")
+tabmod3[,1] <- c(\"0.104\",\"0.001*\", \"0.039\",\"\",\"\",32,\"0.144\",\"59.007\",\"65.112\",\"-25.503\")
+tabmod3[,2] <- c(\"0.104\",\"0.001*\", \"0.039\",\"-0.002\",\"\",32,\"0.144\",\"61.004\",\"68.636\",\"-25.502\")
+tabmod3[,3] <- c(\"0.104\",\"0.001*\", \"0.039\",\"\",\"0.000\",32,\"0.144\",\"61.006\",\"68.638\",\"-25.503\")
+tabmod3[,4] <- c(\"0.104\",\"0.001*\", \"0.039\",\"-0.003\",\"0.000\",32,\"0.144\",\"63.003\",\"72.161\",\"-25.501\")
+
+tab3 <- gt(data = tabmod3,rowname_col = TRUE, rownames_to_stub = TRUE) %>%
+  tab_header(
+    title = md(\"**Main Regression Models Testing the Relationship of Government Position and Government Spending** \")
+  ) %>%
+  tab_footnote(
+    footnote = \" *** p < 0.01 ** p < 0.05 * p < 0.1 *\",
+    locations = cells_body(
+      columns = vars(M1),
+      rows = 2)
+  )
+
+
+
+# Whether government positions predicts tax revenue
+
+model5 <- \"
+  # regression
+  taxrev ~ govpos + cntry + wave 
+\"
+m5 <- sem(model5, df)
+
+summary(m5, fit.measures = TRUE, rsquare = TRUE)
+
+
+model5.2 <- \"
+  # regression
+  taxrev ~ govpos + cntry + wave + co2
+\"
+m5.2 <- sem(model5.2, df)
+
+summary(m5.2, fit.measures = TRUE, rsquare = TRUE)
+
+
+model5.3 <- \"
+  # regression
+  taxrev ~ govpos + cntry + wave + gdp
+\"
+m5.3 <- sem(model5.3, df)
+
+summary(m5.3, fit.measures = TRUE, rsquare = TRUE)
+
+
+model5.4 <- \"
+  # regression
+  taxrev ~ govpos + cntry + wave + co2 + gdp
+\"
+m5.4 <- sem(model5.4, df)
+
+summary(m5.4, fit.measures = TRUE, rsquare = TRUE)
+
+
+## Comparing East-West/ Rich-Poor
+df <- df %>%
+  mutate(
+    gdp_scale = round(scale(gdp),2),
+    topgdp = ifelse(gdp_scale>=1, 1, 0)
+  )
+m10 <- lm(spend ~ tradeoff + as.factor(east) + as.factor(wave), data = df )
+m10.2 <- lm(spend ~ tradeoff + as.factor(east) + as.factor(wave) + co2, data = df )
+m10.3 <- lm(spend ~ tradeoff + as.factor(east) + as.factor(wave) + gdp, data = df )
+m10.4 <- lm(spend ~ tradeoff + as.factor(east) + as.factor(wave) + co2 + gdp, data = df )
+
+tab_model(m10, m10.2, m10.3, m10.4, p.style = \"stars\", p.threshold = c(0.10, 0.05, 0.01), show.ci = F, rm.terms = c(\"(Intercept)\"), show.loglik = T, show.aic = T, dv.labels = c(\"M11a\", \"M12a\",\"M13a\", \"M14a\"), pred.labels = c(\"Willingness\", \"East\", \"Year/Wave\", \"CO2\", \"GDP\") ,file = \"Table10.html\",show.std = TRUE)
+
+m11 <- lm(taxrev ~ tradeoff + as.factor(east) + as.factor(wave), data = df)
+m11.2 <- lm(taxrev ~ tradeoff + as.factor(east) + as.factor(wave) + co2, data = df)
+m11.3 <- lm(taxrev ~ tradeoff + as.factor(east) + as.factor(wave) + gdp, data = df)
+m11.4 <- lm(taxrev ~ tradeoff + as.factor(east) + as.factor(wave) + co2 + gdp, data = df)
+
+tab_model(m11, m11.2, m11.3, m11.4, p.style = \"stars\", p.threshold = c(0.10, 0.05, 0.01), show.ci = F, rm.terms = c(\"(Intercept)\"), show.loglik = T, show.aic = T, show.std = TRUE, dv.labels = c(\"M31a\", \"M32a\",\"M33a\", \"M34a\"), pred.labels = c(\"Willingness\", \"East\", \"Year/Wave\", \"CO2\", \"GDP\") ,file = \"Table11.html\")
+
+
+
+# Validity check - data 2014
+
+## East on Tax Revenue
+df1 <- df[which(df$wave == 2014),]
+
+m12 <- lm(taxrev ~ tradeoff + as.factor(east), data = df1)
+m12.2 <- lm(taxrev ~ tradeoff + as.factor(east)  + co2, data = df1)
+m12.3 <- lm(taxrev ~ tradeoff + as.factor(east) + gdp, data = df1)
+m12.4 <- lm(taxrev ~ tradeoff + as.factor(east) + co2 + gdp, data = df1)
+
+tab_model(m12, m12.2, m12.3, m12.4, p.style = \"stars\", p.threshold = c(0.10, 0.05, 0.01), show.ci = F, rm.terms = c(\"(Intercept)\"), show.loglik = T, show.aic = T, show.std = TRUE, dv.labels = c(\"M41\", \"M42\",\"M43\", \"M44\"), pred.labels = c(\"Willingness\", \"East\", \"CO2\", \"GDP\") ,file = \"Table12.html\")
+
+## Willingness - Government Position
+
+m13 <- lm(govpos ~ tradeoff + cntry, data = df1)
+m13.2 <- lm(govpos ~ tradeoff + cntry  + co2, data = df1)
+m13.3 <- lm(govpos ~ tradeoff + cntry + gdp, data = df1)
+m13.4 <- lm(govpos ~ tradeoff + cntry + co2 + gdp, data = df1)
+
+tab_model(m13, m13.2, m13.3, m13.4, p.style = \"stars\", p.threshold = c(0.10, 0.05, 0.01), show.ci = F, rm.terms = c(\"(Intercept)\"), show.loglik = T, show.aic = T, show.std = TRUE, dv.labels = c(\"M51\", \"M52\",\"M53\", \"M54\"), pred.labels = c(\"Willingness\", \"Country\", \"CO2\", \"GDP\") ,file = \"Table13.html\")
+
+cor(df2$gdp,df2$cntry)
+
+
+a.6 <- lm(gdp~ east, data = df)
+
+tab_model(a.6, p.style = \"stars\", p.threshold = c(0.10, 0.05, 0.01), show.ci = F, rm.terms = c(\"(Intercept)\"), show.loglik = T, show.aic = T, show.std = TRUE, dv.labels = c(\"Predicting GDP\"), pred.labels = c(\"East\") ,file = \"A5.html\")
+```"

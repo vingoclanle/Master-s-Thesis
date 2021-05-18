@@ -1,0 +1,55 @@
+"0","```r
+seat1 <- seat1 %>%
+  mutate(
+    cntry = countrycode(Country, origin = \"country.name\", destination = \"iso3n\"),
+    pname = Party.Abbrev,
+    perseat = round(as.numeric(Percentage.of.seats.in.parliament),2),
+    year = 2010, 
+    wave = 2010
+  ) %>%
+  dplyr::select(cntry,year, wave, pname, perseat) %>% 
+  arrange(cntry, wave)
+
+
+
+seat2 <- seat2 %>%
+  mutate(
+    cntry = countrycode(Country, origin = \"country.name\", destination = \"iso3n\"),
+    pname = Party.Abbrev,
+    perseat = round(as.numeric(Percentage.of.seats.in.parliament),2),
+    year = 2014,
+    wave = 2014
+  ) %>%
+  dplyr::select(cntry, year, wave, pname, perseat) %>%
+  arrange(cntry,wave)
+
+
+seat <- rbind(seat1,seat2)
+seat <- arrange(seat,cntry,wave)
+
+  
+# Move back to ches
+ches <- filter(ches, cntry %in% seat$cntry)
+ches <- arrange(ches,cntry,wave,pname)
+seat <- arrange(seat,cntry,wave,pname)
+
+party <- left_join(ches,seat, by = c(\"cntry\",\"wave\",\"pname\", \"year\"))
+
+party <- party[complete.cases(party$perseat),]
+party <- party[complete.cases(party$env),]
+
+party <- party %>%
+  mutate(
+    govpos = env*perseat/100
+  )
+govpos <- dplyr::select(party, cntry, wave, year, govpos)
+govpos <- aggregate(govpos, by= list(govpos$cntry, govpos$year), FUN = sum)
+govpos <- govpos %>%
+  mutate(
+    cntry = Group.1,
+    year = Group.2,
+    wave = year
+  ) %>%
+  dplyr::select(cntry, year, wave, govpos) %>%
+  arrange(cntry, wave)
+```"

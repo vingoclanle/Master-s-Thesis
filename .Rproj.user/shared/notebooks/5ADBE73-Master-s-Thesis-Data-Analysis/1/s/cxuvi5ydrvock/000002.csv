@@ -1,0 +1,18 @@
+"0","```r
+
+env00 <- env00 %>% 
+  dplyr::mutate(
+    cntry = zap_labels(v3),
+    wave = 2010,
+    year = 2000,
+    cntry = dplyr::recode(cntry, `2` = 276, `3` = 276, `4` = 826, `5` = 826, `6` = 840, `7` = 040, `8` = 348, `9` = 380, `10` = 372, `11` = 528, `12` = 578, `13` = 752, `14` = 203, `15` = 705, `16` = 616, `17` = 100, `18` = 643, `19` = 554, `20` = 124, `21` = 608, `22` = 276, `24` = 392, `25` = 724, `26` = 428, `30` = 620, `31` = 152, `32` = 208, `33` = 756, `37` = 246, `38` = 484),
+    price = zap_labels(as.numeric(car::recode(v19, '1=5;2=4;3=3;4=2;5=1;else=NA'))),
+    tax = zap_labels(as.numeric(car::recode(v20,'1=5;2=4;3=3;4=2;5=1;else=NA'))),
+    cut = zap_labels(as.numeric(car::recode(v21,'1=5;2=4;3=3;4=2;5=1;else=NA')))
+  ) 
+
+env00 <- dplyr::select(env00, cntry, year, price, tax, cut, wave)
+
+
+
+```"

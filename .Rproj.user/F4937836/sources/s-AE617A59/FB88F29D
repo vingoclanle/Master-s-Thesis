@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1621343032291.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "528786784",
+    "id" : "FB88F29D",
+    "lastKnownWriteTime" : 1621343429,
+    "last_content_update" : 1621343429389,
+    "path" : "~/GitHub/Master-s-Thesis/Master-s-Thesis-Data-Analysis.Rmd",
+    "project_path" : "Master-s-Thesis-Data-Analysis.Rmd",
+    "properties" : {
+        "chunk_output_type" : "inline",
+        "cursorPosition" : "44,53",
+        "scrollLine" : "31"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

@@ -1,0 +1,17 @@
+"0","```r
+gspend <- gspend %>%
+  mutate(
+    GEO = car::recode(GEO, '\"Germany (until 1990 former territory of the FRG\" = \"Germany\"'),
+    cntry = countrycode(GEO, origin = \"country.name\", destination = \"iso3n\", nomatch = NULL),
+    year = TIME,
+    spend = Value, 
+    wave = year
+  ) %>%
+  arrange(cntry,year) %>%
+  dplyr::select(cntry,year,spend) %>%
+  filter(year %in% c(2010,2014)& cntry %in% seat$cntry) %>%
+  mutate(
+    wave = year
+  )
+
+```"

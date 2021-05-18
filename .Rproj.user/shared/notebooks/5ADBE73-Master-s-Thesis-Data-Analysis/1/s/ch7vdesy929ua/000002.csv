@@ -1,0 +1,48 @@
+"0","```r
+
+# Back to environment 
+
+env <- env[which(env$cntry %in% govpos$cntry),]
+env <- env[complete.cases(env$price),]
+env <- env[complete.cases(env$tax),]
+env <- env[complete.cases(env$cut),]
+
+# Environment new 
+env$tradeoff <- round(rowMeans(env[,-c(1,2,6)]),2)
+
+env_mean <- round(aggregate(env, by = list(env$cntry, env$wave), FUN = mean, na.rm = T),2)
+env_sd <- round(aggregate(env, by = list(env$cntry,env$wave), FUN = sd, na.rm = T),2)
+
+env_mean <- env_mean %>%
+  mutate(
+    cntry = Group.1,
+    wave = Group.2,
+    year = ifelse(wave == 2010, 2000, 2010),
+    price_mean = price,
+    tax_mean = tax,
+    cut_mean = cut,
+  ) %>%
+  dplyr::select(cntry,year, wave,price_mean,tax_mean,cut_mean, tradeoff) %>%
+  arrange(cntry,wave)
+
+env_sd <- env_sd %>%
+  mutate(
+    cntry = Group.1,
+    wave = Group.2,
+    year = ifelse(wave == 2010, 2000, 2010),
+    price_sd = price,
+    tax_sd = tax,
+    cut_sd = cut,
+    tradeoff_sd = tradeoff
+  ) %>%  
+  dplyr::select(cntry,year, wave, price_sd,tax_sd,cut_sd, tradeoff_sd) %>%
+  arrange(cntry,wave)
+
+
+df = left_join(govpos,env_mean, by = c(\"cntry\",\"wave\"))
+df = left_join(df, gspend, by = c(\"cntry\",\"wave\"))
+df = left_join(df, gtax, by = c(\"cntry\",\"wave\"))
+
+
+
+```"

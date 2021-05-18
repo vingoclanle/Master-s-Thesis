@@ -1,0 +1,25 @@
+"0","```r
+ches14 <- ches14 %>%
+  mutate(
+    cname = car::recode(cname, recodes = '\"bel\" = \"BEL\"; \"den\" = \"DNK\"; \"ger\" = \"DEU\"; \"gre\" = \"GRC\";
+                        \"spa\" = \"ESP\"; \"fra\" = \"FRA\"; \"ire\" = \"IRL\"; \"it\" = \"ITA\"; \"net\" = \"NLD\"; 
+                        \"uk\" = \"GBR\"; \"por\" = \"PRT\"; \"aus\" = \"AUT\"; \"fin\" = \"FIN\"; \"swe\" = \"SWE\"; 
+                        \"bul\" = \"BGR\"; \"cze\" = \"CZE\"; \"est\" = \"EST\"; \"hun\" = \"HUN\"; \"lat\" = \"LVA\"; 
+                        \"lith\" = \"LTU\"; \"pol\" = \"POL\"; \"rom\" = \"ROU\"; \"slo\" = \"SVK\"; \"sle\" = \"SVN\";
+                        \"cro\" = \"HRV\"; \"tur\" = \"TUR\"; \"nor\" = \"NOR\"; \"swi\" = \"CHE\"; \"mal\" = \"MHL\";
+                        \"lux\" = \"LUX\"; \"cyp\"= \"CYP\"; else = NA'),
+    cntry = countrycode(cname, origin = \"iso3c\", destination = \"iso3n\"),
+    env = environment,
+    pname = party_name,
+    pid = party_id, 
+    year = 2014, 
+    wave = 2014
+  ) %>%
+  arrange(cntry) %>%
+  dplyr::select(cntry,year, wave, pname,pid,env)
+
+# Merge
+
+ches <- rbind(ches10,ches14)
+ches <- arrange(ches,cntry,wave)
+```"

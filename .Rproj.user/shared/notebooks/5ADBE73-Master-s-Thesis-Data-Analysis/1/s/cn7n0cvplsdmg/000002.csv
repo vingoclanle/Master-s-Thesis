@@ -1,0 +1,35 @@
+"0","```r
+co2$freq.geo.TIME_PERIOD <- substr(co2$freq.geo.TIME_PERIOD,3,4)
+co2 <- co2 %>%
+  mutate(
+    cntry = car::recode(freq.geo.TIME_PERIOD, '\"EL\" = \"GR\"; \"UK\" = \"GB\"'),
+    cname = countrycode(cntry, origin = \"iso2c\", destination = \"country.name\", nomatch = NULL)
+  )
+
+co2.2 <- as.data.frame(matrix(nrow = 70,ncol = 3))
+co2.2 <- co2.2 %>%
+  mutate(
+    cname = rep(co2$cname,2),
+    co2 = V1,
+    year = V2
+  ) %>%
+  dplyr::select(cname,co2,year)
+
+co2.2[1:35,]$co2 <- co2$X2010
+co2.2[36:70,]$co2 <- co2$X2014
+co2.2[1:35,]$year <- 2010
+co2.2[36:70,]$year <- 2014
+co2.2$wave <- co2.2$year
+
+co2 <- co2.2
+co2 <- arrange(co2, cname,wave)
+co2$cntry <- countrycode(co2$cname, origin = \"country.name\", destination = \"iso3n\", nomatch = NULL)
+
+co2 <- co2[which(co2$cntry %in% govpos$cntry), ]
+co2[which(co2$cname == \"France\" & co2$wave == 2014),]$co2 <- 7.1
+
+co2$co2 <- as.numeric(co2$co2)
+df = left_join(df, co2, by = c(\"cntry\", \"wave\"))
+df <- dplyr::select(df,cntry, wave, year.x, price_mean, tax_mean, cut_mean,govpos, tradeoff, spend, taxrev, co2)
+colnames(df) [3] <- \"year\"
+```"

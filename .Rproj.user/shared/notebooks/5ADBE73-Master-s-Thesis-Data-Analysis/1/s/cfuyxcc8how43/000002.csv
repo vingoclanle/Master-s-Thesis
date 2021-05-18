@@ -1,0 +1,24 @@
+"0","```r
+colnames(env10) <- tolower(colnames(env10))
+env10 <- env10 %>%
+  mutate(
+    cntry = country,
+    wave = 2014,
+    year = 2010,
+    price = zap_labels(as.numeric(car::recode(v29,'1=5;2=4;3=3;4=2;5=1;else=NA'))),
+    tax = zap_labels(as.numeric(car::recode(v30,'1=5;2=4;3=3;4=2;5=1;else=NA'))),
+    cut = zap_labels(as.numeric(car::recode(v31,'1=5;2=4;3=3;4=2;5=1;else=NA')))
+  )
+
+env10 <- dplyr::select(env10, cntry, year, price, tax, cut, wave)
+
+
+
+# Merge and arrange
+
+env <- rbind(env00,env10)
+env <- env %>%
+  arrange(cntry, wave)
+
+
+```"
