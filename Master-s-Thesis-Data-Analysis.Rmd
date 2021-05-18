@@ -10,15 +10,14 @@ output: html_notebook
 
 ```{r library, include = TRUE, message = FALSE}
 rm(list = ls())  # Clean the global environment
-
-# install.packages("pacman")
+#install.packages("here")
+#install.packages("pacman")
 
 library(pacman)
 
 pacman::p_load("tidyverse","haven", "car","countrycode", "openxlsx", "lavaan", "knitr","semTools", "ragg", "sjmisc", "sjPlot", "gt")  # Load libraries
 
-
-wd <- "C:/Users/vile2/OneDrive/Documents/GitHub/Master-s-Thesis"  # Working directory
+library(here)
 options(encoding = "UTF-8")
 ```
 
@@ -27,30 +26,26 @@ options(encoding = "UTF-8")
 ```{r read, include = TRUE, message = FALSE}
 
 # Environment Module
-
-env00 <- read_dta(paste(wd, "ZA3440_Envi2000.dta",sep="/"))
-env10 <- read_dta(paste(wd, "ZA5500_Envi2010.dta",sep="/"))
+env00 <- read_dta(here::here("Vi Le - Master Thesis","ZA3440_Envi2000.dta"))
+env10 <- read_dta(here::here("Vi Le - Master Thesis","ZA5500_Envi2010.dta"))
 
 # CHES
-ches10 <- read.csv(paste(wd,"2010_CHES_dataset_means.csv", sep = "/"), na.strings = "")
-ches14 <- read.csv(paste(wd,"2014_CHES_dataset_means.csv", sep = "/"), na.strings = "")
-seat1 <- read.xlsx(paste(wd,"Percentage-of-seats-in-parliaments.xlsx", sep = "/"),na.strings = "", sheet = 1)
-seat2 <- read.xlsx(paste(wd,"Percentage-of-seats-in-parliaments.xlsx", sep = "/"), na.strings = "", sheet = 2)
+ches10 <- read.csv(here::here("Vi Le - Master Thesis","2010_CHES_dataset_means.csv", na.strings = ""))
+ches14 <- read.csv(here::here("Vi Le - Master Thesis","2014_CHES_dataset_means.csv", na.strings = ""))
+seat1 <- read.xlsx(here::here("Vi Le - Master Thesis","Percentage-of-seats-in-parliaments.xlsx",na.strings="", sheet=1))
+seat2 <- read.xlsx(here::here("Vi Le - Master Thesis","Percentage-of-seats-in-parliaments.xlsx",na.strings="", sheet=2))
 
 # Government spending 
-gspend <- read.csv(paste(wd,"gov_10a_exp_1_Data.csv", sep = "/"))
+gspend <- read.csv(here::here("Vi Le - Master Thesis","gov_10a_exp_1_Data.csv"))
 
 # CO2 Emission
-
-co2 <- read.table(file = paste(wd,"estat_t2020_rd300.tsv", sep="/"), sep = '\t', header = TRUE) 
+co2 <- read.table(file = here::here("Vi Le - Master Thesis","estat_t2020_rd300.tsv", sep = '\t', header = TRUE)) 
 
 # Environment tax
-
-gtax <- read.csv(paste(wd,"env_ac_tax_1_Data.csv", sep = "/"))
+gtax <- read.csv(here::here("Vi Le - Master Thesis","env_ac_tax_1_Data.csv"))
 
 # GDP per Capita
-
-gdp <- read.csv(paste(wd,"nama_10_pc_1_Data.csv", sep = "/"))
+gdp <- read.csv(here::here("Vi Le - Master Thesis","nama_10_pc_1_Data.csv"))
 
 ```
 
@@ -312,16 +307,17 @@ df = left_join(govpos,env_mean, by = c("cntry","wave"))
 df = left_join(df, gspend, by = c("cntry","wave"))
 df = left_join(df, gtax, by = c("cntry","wave"))
 
-df <- dplyr::select(df, )
+
 
 ```
 
 ## Deal with CO2 Emissions
 
 ```{r co2}
+co2$freq.geo.TIME_PERIOD <- substr(co2$freq.geo.TIME_PERIOD,3,4)
 co2 <- co2 %>%
   mutate(
-    cntry = car::recode(geo.time, '"EL" = "GR"; "UK" = "GB"'),
+    cntry = car::recode(freq.geo.TIME_PERIOD, '"EL" = "GR"; "UK" = "GB"'),
     cname = countrycode(cntry, origin = "iso2c", destination = "country.name", nomatch = NULL)
   )
 
@@ -348,7 +344,9 @@ co2 <- co2[which(co2$cntry %in% govpos$cntry), ]
 co2[which(co2$cname == "France" & co2$wave == 2014),]$co2 <- 7.1
 
 co2$co2 <- as.numeric(co2$co2)
-
+df = left_join(df, co2, by = c("cntry", "wave"))
+df <- dplyr::select(df,cntry, wave, year.x, price_mean, tax_mean, cut_mean,govpos, tradeoff, spend, taxrev, co2)
+colnames(df) [3] <- "year"
 ```
 
 
@@ -360,10 +358,7 @@ co2$co2 <- as.numeric(co2$co2)
 
 
 library(sjmisc)
-
-descr(tab1,show = c("n", "mean", "sd", "range", "skew"),out = "browser")
-
-descr(env_mean,show = c("n", "mean", "sd", "range", "skew"),out = "browser")
+descr(env,show = c("n", "mean", "sd", "range", "skew"),out = "browser")
 descr(df,show = c("n", "mean", "sd", "range", "skew"),out = "browser")
 
 # Plot mean opinion by country - Figure 1
@@ -386,18 +381,20 @@ invisible(dev.off())
 party[,-c(1:4)] <- round(party[,-c(1:4)],2)
 party$cname <- countrycode(party$cntry, origin = "iso3n", destination = "country.name")
 
-party2 <- party[,c(8,2,3,5:7)]
+party2 <- party[,c(9,2,4,6:8)]
 colnames(party2) <- c("Country", "Year", "Party name", "Attitude", "Percentage Seat", "Gov Position")
 party2 %>% gt()
 
 # Plot mean position by country - Figure 2
 
 govpos2 <- govpos
+govpos2$govpos <- round(govpos2$govpos,2)
+govpos2$cname <- countrycode(govpos2$cntry, origin = "iso3n", destination = "country.name")
+govpos2 <- govpos2[,c(5,2,4)]
 colnames(govpos2) <- c("Country", "Year", "Goverment position")
-govpos2$`Goverment position` <- round(govpos2$`Goverment position`,2)
-govpos2$`Country name` <- countrycode(govpos2$Country, origin = "iso3n", destination = "country.name")
-govpos2 <- govpos2[,c(4,2,3)]
 descr(govpos2$`Goverment position`, show = c("n", "mean", "sd", "range", "skew"),out = "browser" )
+
+
 
 govpos$cntry <- as.factor(govpos$cntry)
 govpos$cname <- countrycode(govpos$cntry, origin = "iso3n", destination = "country.name")
@@ -417,7 +414,7 @@ invisible(dev.off())
 gspend$spend <- as.numeric(gspend$spend)
 descr(gspend, show = c("n", "mean", "sd", "range", "skew"),out = "browser")
 gspend$cname <- countrycode(gspend$cntry, origin = "iso3n", destination = "country.name")
-gspend2 <- gspend[,c(4,2,3)]
+gspend2 <- gspend[,c(5,2,3)]
 
 
 agg_png(filename = "Fig3.png", width = 1200, height = 700, res =144,)
@@ -437,7 +434,7 @@ invisible(dev.off())
 gtax$taxrev <- as.numeric(gtax$taxrev)
 descr(gtax, show = c("n", "mean", "sd", "range", "skew"),out = "browser")
 gtax$cname <- countrycode(gtax$cntry, origin = "iso3n", destination = "country.name")
-gtax2 <- gtax[,c(4,2,3)]
+gtax2 <- gtax[,c(5,2,3)]
 
 agg_png(filename = "Fig4.png", width = 1200, height = 700, res =144,)
 ggplot(data = gtax2, aes(x = year, y = taxrev, color = cname)) +
@@ -561,7 +558,6 @@ meaIn2 %>% gt()
 
 ```{r}
 
-df <- left_join(df,co2, by = c("cntry","wave"))
 df <- left_join(df, gdp, by = c("cntry","wave"))
 df$gdp <- gsub(',','',df$gdp)
 df$taxrev <- gsub(',','',df$taxrev)
@@ -577,186 +573,59 @@ df <- df %>%
     year2 = wave
   )
 
-# Model 1: whether public opinion predicts government spending
+# Dependent variable: Spending
+# Model 1: whether public opinion  predicts spending
 
 
 model1 <- "
   # regression
-  govpos ~ tradeoff + cntry + wave
+  spend ~ tradeoff + cntry + wave 
 "
 m1 <- sem(model1, df, se = "bootstrap")
 
-summary(m1, fit.measures = TRUE, rsquare = TRUE, standardized = TRUE)
+
+summary(m1, fit.measures = TRUE, rsquare = TRUE)
 
 model1.2 <- "
   # regression
-  govpos ~ tradeoff + cntry + wave + co2
+  spend ~ tradeoff + cntry + wave + co2
 "
-
 m1.2 <- sem(model1.2, df, se = "bootstrap")
 
 summary(m1.2, fit.measures = TRUE, rsquare = TRUE)
 
 model1.3 <- "
   # regression
-  govpos ~ tradeoff + cntry + wave + gdp
+  spend ~ tradeoff + cntry + wave + gdp
 "
-m1.3 <- sem(model1.3, df, se = "bootstrap")
+m1.3 <- sem(model1.3, df, se = "bootstrap", check.gradient = FALSE)
 
 summary(m1.3, fit.measures = TRUE, rsquare = TRUE)
 
 model1.4 <- "
   # regression
-  govpos ~ tradeoff + cntry + wave + co2 + gdp
+  spend ~ tradeoff + cntry + wave + co2 + gdp
 "
-m1.4 <- sem(model1.4, df, se = "bootstrap")
+m1.4 <- sem(model1.4, df, se = "bootstrap", check.gradient = FALSE)
 
-summary(m1.4, fit.measures = TRUE, rsquare = TRUE,standardized = TRUE)
+summary(m1.4, fit.measures = TRUE, rsquare = TRUE)
+
+
 
 
 tabmod1 <- data.frame(
   matrix(nrow = 10, ncol = 4),
   row.names = c("Willingness", "Country", "Year","CO2", "GDP", "Observations","R-squared", "AIC", "BIC", "log-likelihood")
 )
-colnames(tabmod1) <- c("M21", "M22", "M23", "M24")
-tabmod1[,1] <- c("-1.210**","0.000", "-0.062","","",32,"0.134","106.782","112.645","-49.391")
-tabmod1[,2] <- c("-1.511**","0.000", "-0.034","0.109","",32,"0.163","107.684","115.013","-48.842")
-tabmod1[,3] <- c("-1.713**","-0.001", "-0.083","","0.000",32,"0.146","108.333","115.662","-49.167")
-tabmod1[,4] <- c("-1.925**","-0.000", "-0.053","0.103","0.000",32,"0.172","109.349","118.143","-48.674")
-# Table 3
-tab3 <- gt(data = tabmod1,rowname_col = TRUE, rownames_to_stub = TRUE) %>%
-  tab_header(
-    title = md("**Main Regression Models Regressing Government Position on Willingness** ")
-  ) %>%
-  tab_footnote(
-    footnote = " *** p < 0.01 ** p < 0.05 * p < 0.1 *",
-    locations = cells_body(
-      columns = vars(M21),
-      rows = 1)
-    
-  )
+colnames(tabmod1) <- c("M11", "M12", "M13", "M14")
+tabmod1[,1] <- c("-0.167","0.001*", "0.040","","",32,"0.096","58.052","63.915","-25.026")
+tabmod1[,2] <- c("-0.207","0.001*", "0.044","0.015","",32,"0.099","59.962","67.290","-24.981")
+tabmod1[,3] <- c("0.271","0.001*", "0.058","","-0.000",32,"0.140","58.462","65.791","-24.231")
+tabmod1[,4] <- c("0.229","0.001*", "0.064","0.021","-0.000",32,"0.145","60.272","69.067","-24.136")
 
+## Table 1 
 
-# Model 2: whether government positions predicts spending
-
-
-model2 <- "
-  # regression
-  spend ~ govpos + cntry + wave 
-"
-m2 <- sem(model2, df)
-
-summary(m2, fit.measures = TRUE, rsquare = TRUE)
-
-
-
-model2.2 <- "
-  # regression
-  spend ~ govpos + cntry + year + co2 
-"
-m2.2 <- sem(model2.2, df)
-
-summary(m2.2, fit.measures = TRUE, rsquare = TRUE)
-
-
-
-model2.3 <- "
-  # regression
-  spend ~ govpos + cntry + year + gdp
-"
-m2.3 <- sem(model2.3, df)
-
-summary(m2.3, fit.measures = TRUE, rsquare = TRUE)
-
-
-
-model2.4 <- "
-  # regression
-  spend ~ govpos + cntry + year + co2 + gdp
-"
-m2.4 <- sem(model2.4, df)
-
-summary(m2.4, fit.measures = TRUE, rsquare = TRUE)
-
-
-
-
-tabmod2 <- data.frame(
-  matrix(nrow = 10, ncol = 4),
-  row.names = c("Government Position", "Country", "Year","CO2", "GDP", "Observations","R-squared", "AIC", "BIC", "log-likelihood")
-)
-colnames(tabmod2) <- c("M1", "M2", "M3", "M4")
-tabmod2[,1] <- c("0.104","0.001*", "0.039","","",32,"0.144","59.007","65.112","-25.503")
-tabmod2[,2] <- c("0.104","0.001*", "0.039","-0.002","",32,"0.144","61.004","68.636","-25.502")
-tabmod2[,3] <- c("0.104","0.001*", "0.039","","0.000",32,"0.144","61.006","68.638","-25.503")
-tabmod2[,4] <- c("0.104","0.001*", "0.039","-0.003","0.000",32,"0.144","63.003","72.161","-25.501")
-
-tab4 <- gt(data = tabmod2,rowname_col = TRUE, rownames_to_stub = TRUE) %>%
-  tab_header(
-    title = md("**Main Regression Models Testing the Relationship of Government Position and Government Spending** ")
-  ) %>%
-  tab_footnote(
-    footnote = " *** p < 0.01 ** p < 0.05 * p < 0.1 *",
-    locations = cells_body(
-      columns = vars(M1),
-      rows = 2)
-  )
-
-tab3
-
-
-# Model 3: whether public opinion  predicts spending
-
-
-model3 <- "
-  # regression
-  spend ~ tradeoff + cntry + wave 
-"
-m3 <- sem(model3, df, se = "bootstrap")
-
-
-summary(m3, fit.measures = TRUE, rsquare = TRUE)
-
-model3.2 <- "
-  # regression
-  spend ~ tradeoff + cntry + year + co2
-"
-m3.2 <- sem(model3.2, df, se = "bootstrap")
-
-summary(m3.2, fit.measures = TRUE, rsquare = TRUE)
-
-model3.3 <- "
-  # regression
-  spend ~ tradeoff + cntry + year + gdp
-"
-m3.3 <- sem(model3.3, df, se = "bootstrap")
-
-summary(m3.3, fit.measures = TRUE, rsquare = TRUE)
-
-model3.4 <- "
-  # regression
-  spend ~ tradeoff + cntry + year + co2 + gdp
-"
-m3.4 <- sem(model3.4, df, se = "bootstrap")
-
-summary(m3.4, fit.measures = TRUE, rsquare = TRUE)
-
-
-
-
-tabmod3 <- data.frame(
-  matrix(nrow = 10, ncol = 4),
-  row.names = c("Willingness", "Country", "Year","CO2", "GDP", "Observations","R-squared", "AIC", "BIC", "log-likelihood")
-)
-colnames(tabmod3) <- c("M11", "M12", "M13", "M14")
-tabmod3[,1] <- c("-0.167","0.001", "0.040","","",32,"0.096","58.052","63.915","-25.026")
-tabmod3[,2] <- c("-0.207","0.001*", "0.044","0.015","",32,"0.099","59.962","67.290","-24.981")
-tabmod3[,3] <- c("0.271","0.001*", "0.058","","-0.000",32,"0.140","58.462","65.791","-24.231")
-tabmod3[,4] <- c("0.229","0.001*", "0.064","0.021","-0.000",32,"0.145","60.272","69.067","-24.136")
-
-## Table 2 
-
-tab2 <- gt(data = tabmod3,rowname_col = TRUE, rownames_to_stub = TRUE) %>%
+tab1 <- gt(data = tabmod1,rowname_col = TRUE, rownames_to_stub = TRUE) %>%
   tab_header(
     title = md("**Main Regression Models Regressing Government Spending on Willingness** ")
   ) %>%
@@ -768,8 +637,64 @@ tab2 <- gt(data = tabmod3,rowname_col = TRUE, rownames_to_stub = TRUE) %>%
   )
 
 
+# Model 2: whether public opinion predicts party position
+model2 <- "
+  # regression
+  govpos ~ tradeoff + cntry + wave
+"
+m2 <- sem(model2, df, se = "bootstrap")
 
-# SEM 1
+summary(m2, fit.measures = TRUE, rsquare = TRUE, standardized = TRUE)
+
+model2.2 <- "
+  # regression
+  govpos ~ tradeoff + cntry + wave + co2
+"
+
+m2.2 <- sem(model2.2, df, se = "bootstrap")
+
+summary(m2.2, fit.measures = TRUE, rsquare = TRUE)
+
+model2.3 <- "
+  # regression
+  govpos ~ tradeoff + cntry + wave + gdp
+"
+m2.3 <- sem(model2.3, df, se = "bootstrap", check.gradient = FALSE)
+
+summary(m2.3, fit.measures = TRUE, rsquare = TRUE)
+
+model2.4 <- "
+  # regression
+  govpos ~ tradeoff + cntry + wave + co2 + gdp
+"
+m2.4 <- sem(model2.4, df, se = "bootstrap", check.gradient = FALSE)
+
+summary(m2.4, fit.measures = TRUE, rsquare = TRUE,standardized = TRUE)
+
+
+tabmod2 <- data.frame(
+  matrix(nrow = 10, ncol = 4),
+  row.names = c("Willingness", "Country", "Year","CO2", "GDP", "Observations","R-squared", "AIC", "BIC", "log-likelihood")
+)
+colnames(tabmod2) <- c("M21", "M22", "M23", "M24")
+tabmod2[,1] <- c("-1.210**","0.000", "-0.062","","",32,"0.134","106.782","112.645","-49.391")
+tabmod2[,2] <- c("-1.511**","0.000", "-0.034","0.109","",32,"0.163","107.684","115.013","-48.842")
+tabmod2[,3] <- c("-1.713**","-0.001", "-0.083","","0.000",32,"0.146","108.333","115.662","-49.167")
+tabmod2[,4] <- c("-1.925**","-0.000", "-0.053","0.103","0.000",32,"0.172","109.349","118.143","-48.674")
+## Table 2
+tab2 <- gt(data = tabmod2,rowname_col = TRUE, rownames_to_stub = TRUE) %>%
+  tab_header(
+    title = md("**Main Regression Models Regressing Government Position on Willingness** ")
+  ) %>%
+  tab_footnote(
+    footnote = " *** p < 0.01 ** p < 0.05 * p < 0.1 *",
+    locations = cells_body(
+      columns = vars(M21),
+      rows = 1)
+    
+  )
+
+# SEM 1: Public Opinion - Party Positions - Government Spending
 
 modsem1 <- "
 # direct effect
@@ -790,8 +715,8 @@ tabmod4 <- data.frame(
 )
 colnames(tabmod4) <- c("X predicting Y", "X predicting M", "M predicting Y")
 tabmod4[,1] <- c("-0.370","","0.100","0.124","32","-0.201")
-tabmod4[,2] <- c("-1.228***","","-0.001","","","","")
-tabmod4[,3] <- c("","0.074","","","","","")
+tabmod4[,2] <- c("-1.228***","","-0.001","","","")
+tabmod4[,3] <- c("","0.074","","","","")
 
 ## Table 4
 tab4 <- gt(data = tabmod4,rowname_col = TRUE, rownames_to_stub = TRUE) %>%
@@ -806,97 +731,60 @@ tab4 <- gt(data = tabmod4,rowname_col = TRUE, rownames_to_stub = TRUE) %>%
   )
 
 
-# Model 4 whether government positions predicts tax revenue
+# Dependent variable: Tax
 
+# Model 4: whether public opinion  predicts tax revenue
 
 model4 <- "
   # regression
-  taxrev ~ govpos + cntry + year 
+  taxrev ~ tradeoff + cntry + wave 
 "
-m4 <- sem(model4, df)
+m4 <- sem(model4, df, se = "bootstrap")
 
 summary(m4, fit.measures = TRUE, rsquare = TRUE)
 
 
 model4.2 <- "
   # regression
-  taxrev ~ govpos + cntry + year + co2
+  taxrev ~ tradeoff + cntry + wave + co2
 "
-m4.2 <- sem(model4.2, df)
+m4.2 <- sem(model4.2, df, se = "bootstrap")
 
-summary(m4.2, fit.measures = TRUE, rsquare = TRUE)
+summary(m4.2, fit.measures = TRUE, rsquare = TRUE, standardized = TRUE)
+
 
 
 model4.3 <- "
   # regression
-  taxrev ~ govpos + cntry + year + gdp
+  taxrev ~ tradeoff + cntry + wave + gdp
 "
-m4.3 <- sem(model4.3, df)
+m4.3 <- sem(model4.3, df, se = "bootstrap", check.gradient = FALSE)
 
-summary(m4.3, fit.measures = TRUE, rsquare = TRUE)
+summary(m4.3, fit.measures = TRUE, rsquare = TRUE, standardized = TRUE)
 
 
 model4.4 <- "
   # regression
-  taxrev ~ govpos + cntry + year + co2 + gdp
+  taxrev ~ tradeoff + cntry + wave + co2 + gdp
 "
-m4.4 <- sem(model4.4, df)
+m4.4 <- sem(model4.4, df, se = "bootstrap", check.gradient = FALSE)
 
 summary(m4.4, fit.measures = TRUE, rsquare = TRUE)
 
 
-# Model 5: whether public opinion  predicts tax revenue
-
-model5 <- "
-  # regression
-  taxrev ~ tradeoff + cntry + year 
-"
-m5 <- sem(model5, df, se = "bootstrap")
-
-summary(m5, fit.measures = TRUE, rsquare = TRUE)
-
-
-model5.2 <- "
-  # regression
-  taxrev ~ tradeoff + cntry + year + co2
-"
-m5.2 <- sem(model5.2, df, se = "bootstrap")
-
-summary(m5.2, fit.measures = TRUE, rsquare = TRUE, standardized = TRUE)
-
-
-
-model5.3 <- "
-  # regression
-  taxrev ~ tradeoff + cntry + wave + gdp
-"
-m5.3 <- sem(model5.3, df, se = "bootstrap")
-
-summary(m5.3, fit.measures = TRUE, rsquare = TRUE, standardized = TRUE)
-
-
-model5.4 <- "
-  # regression
-  taxrev ~ tradeoff + cntry + year + co2 + gdp
-"
-m5.4 <- sem(model5.4, df, se = "bootstrap")
-
-summary(m5.4, fit.measures = TRUE, rsquare = TRUE)
-
-
-tabmod5 <- data.frame(
+tabmod4 <- data.frame(
   matrix(nrow = 10, ncol = 4),
   row.names = c("Willingness", "Country", "Year","CO2", "GDP", "Observations","R-squared", "AIC", "BIC", "log-likelihood")
 )
 
-colnames(tabmod5) <- c("M31", "M32", "M33", "M34")
-tabmod5[,1] <- c("-1.729","0.000", "-0.161","","",32,"0.105","135.451","141.314","-63.726")
-tabmod5[,2] <- c("-1.678","0.000", "-0.165","-0.018","",32,"0.106","137.439","144.767","-63.719")
-tabmod5[,3] <- c("1.003","0.000", "-0.050","","-0.000**",32,"0.255","131.574","138.902","-60.787")
-tabmod5[,4] <- c("0.963","0.000", "-0.045","0.019","-0.000**",32,"0.256","133.557","142.352","-60.779")
+colnames(tabmod4) <- c("M31", "M32", "M33", "M34")
+tabmod4[,1] <- c("-1.729","0.000", "-0.161","","",32,"0.105","135.451","141.314","-63.726")
+tabmod4[,2] <- c("-1.678","0.000", "-0.165","-0.018","",32,"0.106","137.439","144.767","-63.719")
+tabmod4[,3] <- c("1.003","0.000", "-0.050","","-0.000**",32,"0.255","131.574","138.902","-60.787")
+tabmod4[,4] <- c("0.963","0.000", "-0.045","0.019","-0.000**",32,"0.256","133.557","142.352","-60.779")
 
-## Table 5 
-tab5 <- gt(data = tabmod5,rowname_col = TRUE, rownames_to_stub = TRUE) %>%
+## Table 4 
+tab4 <- gt(data = tabmod4,rowname_col = TRUE, rownames_to_stub = TRUE) %>%
   tab_header(
     title = md("**Main Regression Models Regressing Government Tax Revenue on Willingness** ")
   ) %>%
@@ -909,8 +797,15 @@ tab5 <- gt(data = tabmod5,rowname_col = TRUE, rownames_to_stub = TRUE) %>%
 
 
 
+## SEM 2 - Public Opinion - Party Positions - Tax Revenue
+### Country from East and West as binary variable
+df <- df %>%
+  mutate(
+    cname = countrycode(cntry, origin = "iso3n", destination = "country.name"),
+    east = ifelse(cname %in% c("Bulgaria","Czechia","Latvia","Slovenia", "Slovakia"), 1, 0)
+  )
 df$east <- as.numeric(df$east)
-# SEM 2
+
 modsem2 <- "
 # direct effect
   taxrev ~ c*tradeoff + east
@@ -935,8 +830,6 @@ colnames(tabmod6) <- c("X predicting Y", "X predicting M", "M predicting Y")
 tabmod6[,1] <- c("1.738","","-0.000***","0.314","0.113","32","1.282")
 tabmod6[,2] <- c("-1.227**","","","","","","")
 tabmod6[,3] <- c("","0.372","","","","","")
-
-
 
 ## Table 6
 tab6 <- gt(data = tabmod6,rowname_col = TRUE, rownames_to_stub = TRUE) %>%
@@ -984,7 +877,7 @@ model7.3 <- "
   # regression
   govpos ~ tradeoff + cntry + gdp
 "
-m7.3 <- sem(model7.3, df1, se = "bootstrap")
+m7.3 <- sem(model7.3, df1, se = "bootstrap", check.gradient = FALSE)
 
 summary(m7.3, fit.measures = TRUE, rsquare = TRUE)
 
@@ -993,7 +886,7 @@ model7.4 <- "
   # regression
   govpos ~ tradeoff + cntry + co2 + gdp
 "
-m7.4 <- sem(model7.4, df1, se = "bootstrap")
+m7.4 <- sem(model7.4, df1, se = "bootstrap", check.gradient = FALSE)
 
 summary(m7.4, fit.measures = TRUE, rsquare = TRUE)
 
@@ -1036,7 +929,7 @@ model8.2 <- "
   # regression
   taxrev ~ tradeoff + cntry + co2
 "
-m8.2 <- sem(model8.2, df1, se = "bootstrap")
+m8.2 <- sem(model8.2, df1, se = "bootstrap", check.gradient = FALSE)
 
 summary(m8.2, fit.measures = TRUE, rsquare = TRUE)
 
@@ -1055,7 +948,7 @@ model8.4 <- "
   # regression
   taxrev ~ tradeoff + cntry + co2 + gdp
 "
-m8.4 <- sem(model8.4, df1, se = "bootstrap")
+m8.4 <- sem(model8.4, df1, se = "bootstrap", check.gradient = FALSE)
 
 summary(m8.4, fit.measures = TRUE, rsquare = TRUE)
 
@@ -1083,8 +976,7 @@ tab8 <- gt(data = tabmod8,rowname_col = TRUE, rownames_to_stub = TRUE) %>%
   )
 
 
-
-# SEM 3
+# SEM 3: Public Opinion - Party Positions - Tax Revenue (only 2014)
 modsem3 <- "
 # direct effect
   taxrev ~ c*tradeoff + east
@@ -1096,12 +988,9 @@ modsem3 <- "
   indirect := a*b
 "
 
-m9 <- sem(modsem3,df1, se = "bootstrap")
+m9 <- sem(modsem3,df1, se = "bootstrap", check.gradient = FALSE)
 
 summary(m9, fit.measures = TRUE, rsquare = TRUE, standardized  = TRUE)
-
-
-
 
 
 tabmod9 <- data.frame(
@@ -1112,8 +1001,6 @@ colnames(tabmod9) <- c("X predicting Y", "X predicting M", "M predicting Y")
 tabmod9[,1] <- c("-1.619","","0.188","0.216","17","-2.203")
 tabmod9[,2] <- c("-1.829**","","","","","")
 tabmod9[,3] <- c("","0.319","","","","")
-
-
 
 ## Table 9
 tab9 <- gt(data = tabmod9,rowname_col = TRUE, rownames_to_stub = TRUE) %>%
@@ -1127,12 +1014,112 @@ tab9 <- gt(data = tabmod9,rowname_col = TRUE, rownames_to_stub = TRUE) %>%
       rows = 1)
   )
 ```
-## Comparing East-West/ Rich-Poor
+
+
+## Additional models
 ```{r}
+# Whether government positions predicts spending
+
+model3 <- "
+  # regression
+  spend ~ govpos + cntry + wave 
+"
+m3 <- sem(model3, df)
+
+summary(m3, fit.measures = TRUE, rsquare = TRUE)
+
+
+model3.2 <- "
+  # regression
+  spend ~ govpos + cntry + wave + co2 
+"
+m3.2 <- sem(model3.2, df)
+
+summary(m3.2, fit.measures = TRUE, rsquare = TRUE)
+
+
+model3.3 <- "
+  # regression
+  spend ~ govpos + cntry + wave + gdp
+"
+m3.3 <- sem(model3.3, df)
+
+summary(m3.3, fit.measures = TRUE, rsquare = TRUE)
+
+
+model3.4 <- "
+  # regression
+  spend ~ govpos + cntry + wave + co2 + gdp
+"
+m3.4 <- sem(model3.4, df)
+
+summary(m3.4, fit.measures = TRUE, rsquare = TRUE)
+
+
+tabmod3 <- data.frame(
+  matrix(nrow = 10, ncol = 4),
+  row.names = c("Government Position", "Country", "Year","CO2", "GDP", "Observations","R-squared", "AIC", "BIC", "log-likelihood")
+)
+colnames(tabmod3) <- c("M1", "M2", "M3", "M4")
+tabmod3[,1] <- c("0.104","0.001*", "0.039","","",32,"0.144","59.007","65.112","-25.503")
+tabmod3[,2] <- c("0.104","0.001*", "0.039","-0.002","",32,"0.144","61.004","68.636","-25.502")
+tabmod3[,3] <- c("0.104","0.001*", "0.039","","0.000",32,"0.144","61.006","68.638","-25.503")
+tabmod3[,4] <- c("0.104","0.001*", "0.039","-0.003","0.000",32,"0.144","63.003","72.161","-25.501")
+
+tab3 <- gt(data = tabmod3,rowname_col = TRUE, rownames_to_stub = TRUE) %>%
+  tab_header(
+    title = md("**Main Regression Models Testing the Relationship of Government Position and Government Spending** ")
+  ) %>%
+  tab_footnote(
+    footnote = " *** p < 0.01 ** p < 0.05 * p < 0.1 *",
+    locations = cells_body(
+      columns = vars(M1),
+      rows = 2)
+  )
+
+
+
+# Whether government positions predicts tax revenue
+
+model5 <- "
+  # regression
+  taxrev ~ govpos + cntry + wave 
+"
+m5 <- sem(model5, df)
+
+summary(m5, fit.measures = TRUE, rsquare = TRUE)
+
+
+model5.2 <- "
+  # regression
+  taxrev ~ govpos + cntry + wave + co2
+"
+m5.2 <- sem(model5.2, df)
+
+summary(m5.2, fit.measures = TRUE, rsquare = TRUE)
+
+
+model5.3 <- "
+  # regression
+  taxrev ~ govpos + cntry + wave + gdp
+"
+m5.3 <- sem(model5.3, df)
+
+summary(m5.3, fit.measures = TRUE, rsquare = TRUE)
+
+
+model5.4 <- "
+  # regression
+  taxrev ~ govpos + cntry + wave + co2 + gdp
+"
+m5.4 <- sem(model5.4, df)
+
+summary(m5.4, fit.measures = TRUE, rsquare = TRUE)
+
+
+## Comparing East-West/ Rich-Poor
 df <- df %>%
   mutate(
-    cname = countrycode(cntry, origin = "iso3n", destination = "country.name"),
-    east = ifelse(cname %in% c("Bulgaria","Czechia","Latvia","Slovenia", "Slovakia"), 1, 0),
     gdp_scale = round(scale(gdp),2),
     topgdp = ifelse(gdp_scale>=1, 1, 0)
   )
@@ -1179,6 +1166,5 @@ cor(df2$gdp,df2$cntry)
 a.6 <- lm(gdp~ east, data = df)
 
 tab_model(a.6, p.style = "stars", p.threshold = c(0.10, 0.05, 0.01), show.ci = F, rm.terms = c("(Intercept)"), show.loglik = T, show.aic = T, show.std = TRUE, dv.labels = c("Predicting GDP"), pred.labels = c("East") ,file = "A5.html")
-
 ```
 
